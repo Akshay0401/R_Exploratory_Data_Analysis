@@ -1,0 +1,258 @@
+
+##--------------------- CUSTOMER_CHURN_EDA-----------------------------------------------------------#
+
+
+## Subscription based services typically make money in the following three ways:
+  
+## Acquire new customers
+## Upsell customers
+## Retain existing customers
+
+## In this article I'm going to focus on customer retention. 
+## To do this, I'm going to perform an exploratory analysis, and do some basic data cleaning.
+
+## I'll generate some questions focused on customer segments to help guide the analysis. 
+## Based off of the insights gained, I'll provide some recommendations for improving customer retention. 
+
+
+getwd()
+setwd()
+df <- read.csv("customer_churn.csv",stringsAsFactors = TRUE)
+View(df)
+
+df <- read.csv("C:/Users/Akshay.Gupta/Desktop/Customer_churn.csv")
+View(Customer_churn)
+# dimensions of the data
+dim(df)
+
+# names of the data
+names(df)
+
+# Lets check the Datatypes of the features 
+library(tidyverse)
+glimpse(df)
+
+# Lets Look at Missing Values 
+
+colSums(is.na(df))
+
+# It looks like "TotalCharges" is the only feature with missing values. 
+# Lets go ahead and impute the 11 missing values using the median value.
+
+
+# imputing with the median
+library(dplyr)
+df <- df %>%
+  mutate(TotalCharges = replace(TotalCharges,
+                                is.na(TotalCharges),
+                                median(TotalCharges, na.rm = T)))
+
+# checking that the imputation worked
+sum(is.na(df$TotalCharges))
+
+
+# --------------------- DATA EXPLORATION ----------------------------------------------------------#
+
+# Let's start by taking a look at the unique values of the factor variables
+
+df_tbl <- df %>%
+  select_if(is.factor) %>%
+  summarise_all(n_distinct)
+
+df_tbl
+
+
+# --------------------
+
+
+# To guide the analysis, I'm going to try and answer 
+# the following questions about my customer segments:
+  
+  # Are men more likely to churn than women?
+  # Are senior citizens more like to churn?
+  # Do individuals with a partner churn more than those without a partner?
+  # Do people with dependents churn more than people that do not have dependents?
+  
+
+# Lets Start Exploring Gender Variable  
+  
+# I wouldn't expect one gender to be more likely than another to churn, but lets see what the data shows.
+
+
+STAT::STAT() 
+
+# using bar plot lets visualise the data 
+
+install.packages("ggplot2")
+library(ggplot2)
+
+ggplot(df) +
+  geom_bar(aes(x = gender, fill = Churn), position = "dodge")
+
+table(df$gender,df$Churn)
+
+# Taking a look, the results are similar. Roughly one quarter of the male customers churn, and roughly one quarter of the female customers churn. 
+
+
+# LEts take the look at Senior Citizens
+
+ggplot(df) +
+  geom_bar(aes(x = SeniorCitizen, fill = Churn), position = "dodge")
+
+# We can see the exact value by using table command .
+
+table(df$SeniorCitizen,df$Churn)
+
+# This variable shows a much more meaningful relationship. 
+# Roughly 16% of the customers are senior citizens, and roughly 42% of those senior citizens churn. 
+# On the other hand, of the 84% of customers that are not senior citizens, only 24% churn. 
+# These results show that senior citizens are much more likely to churn.
+
+
+
+# Now I'm going to take a look at people with partners.
+
+ggplot(df) +
+  geom_bar(aes(x=Partner, fill = Churn), position = "dodge")
+
+# Now lets look at exact values .
+
+table(df$Partner,df$Churn)
+
+# Roughly half of the people have partners. Of the people with partners, 20% churn. 
+# For people without partners, approximately 33% churn.
+
+
+# Next, I'll take a look at the Dependents category.
+
+ggplot(df) +
+  geom_bar(aes_string(x="Dependents", fill="Churn"), position = "dodge")
+
+# Lets look at the exact value
+
+table(df$Dependents,df$Churn)
+
+# Approximately 30% of the people have dependents, of which 15% churn. 
+# For the other 70% that don't have dependents, 31% churn.
+
+
+
+# Lets compare the customer segements so that we can identify where we would potentially focus our efforts.
+
+# Total charges and tenure of senior citizens
+
+library(dplyr)
+
+df1 <- df %>%
+  filter(SeniorCitizen == '1', Churn == "Yes")
+  
+
+View(df1)
+
+sum(df1$TotalCharges) # Total Charges = 882405.20 
+
+
+
+# Total charges and tenure of people without a partner
+df2 <- df %>%
+  filter(Partner == "No", Churn == "Yes")
+
+view(df2)
+
+sum(df2$TotalCharges) # Total Charges = 1206776
+
+
+# Total charges and tenure of people without a dependents
+
+df3 <- df %>%
+  filter(Dependents == "No", Churn == "Yes")
+
+view(df3)
+
+sum(df3$TotalCharges) # Total Charges = 2261840
+
+# Based on the results, we should focus our efforts on people without dependents. 
+# This customer segment that churned had nearly 2.3MM in total charges compared to 1.3MM for people without partners, 
+# and only 900K for senior citizens.
+
+
+
+# Lets take the Look at Payment Method 
+
+attach(df)
+df <- as.data.frame(df)
+
+ggplot(df) +
+  geom_bar(aes(x=PaymentMethod,fill=Churn), position = "dodge")
+# Maximum curn is by electronic check .
+
+
+
+# Lets take the look at phone Service
+
+ggplot(df) +
+  geom_bar(aes(x=PhoneService, fill = Churn), position = "dodge")
+
+table(df$PhoneService,df$Churn)
+
+# A lot of people with phone service churned. 
+# Maybe these people don't really use the phone service. 
+# Moving them to a plan without phone service to save them some money on their bill might help retain them.
+
+
+
+
+# Lets Look at Internet Service
+
+ggplot(df) +
+  geom_bar(aes(x=InternetService, fill = Churn), position = "dodge")
+
+table(df$InternetService,df$Churn)
+
+# People with fiber optic internet churned much more than people with DSL or no internet at all.
+# Maybe moving some of those people to DSL or eliminating their internet service would be an option. 
+
+
+
+
+
+# Lets take the Look at Online Security , Online Backup and Device Protection
+
+
+ggplot(df) +
+  geom_bar(aes(x=OnlineSecurity, fill = Churn), position = "dodge")
+
+ggplot(df) +
+  geom_bar(aes(x=OnlineBackup, fill = Churn), position = "dodge")
+
+ggplot(df) +
+  geom_bar(aes(x=DeviceProtection, fill = Churn), position = "dodge")
+
+
+table(df$OnlineSecurity,df$Churn)
+table(df$OnlineBackup,df$Churn)
+table(df$DeviceProtection,df$Churn)
+
+
+# People without online backup, device protection, and online security churn fairly frequently. 
+# Maybe their devices have crashed, causing them to lose valuable files. 
+# They may have also experienced fraud or identity theft that has left them very unhappy. 
+# Moving these people to some of these services may help safeguard their systems.
+
+
+
+
+# Let us Visualise to those people having Tech Support
+
+ggplot(df) +
+  geom_bar(aes(x=TechSupport, fill = Churn), position = "dodge")
+
+table(df$TechSupport,df$Churn)
+
+# Those without tech support tend to churn more frequently than those with tech support. 
+# Moving customers to tech support accounts might be another potential way to prevent churn.
+
+
+# ----------------------- END -------------------------------------------#
+
+
